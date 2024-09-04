@@ -81,7 +81,7 @@ def visualize_molecule(xyz_file):
         st.error(f"Error visualizing molecule: {e}")
 
 # Streamlit interface
-st.title('Molecule Optimization App')
+st.title('xTb2Go: Web app to perform tight-bnding')
 
 # Input SMILES string
 smiles = st.text_input("Enter SMILES string of a molecule:")
