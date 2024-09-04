@@ -71,9 +71,10 @@ def visualize_molecule(xyz_file):
         
         viewer = py3Dmol.view(width=400, height=400)
         viewer.addModel(xyz, 'xyz')
-        viewer.setStyle({'stick': {}})
+        viewer.setStyle({'stick': {}, 'sphere': {'radius': 0.5}})
         viewer.zoomTo()
         viewer.show()
+        st.components.v1.html(viewer._make_html(), width=400, height=400, scrolling=False)
     except FileNotFoundError:
         st.error(f"Optimized XYZ file {xyz_file} not found.")
     except Exception as e:
