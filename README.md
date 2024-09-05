@@ -4,8 +4,6 @@
 
 ## Capabilities
 
-## Capabilities
-
 - **SMILES to 3D Structure Conversion**  
   Converts user-provided SMILES strings to 3D XYZ molecular structures using RDKit, enabling visualization and computational chemistry calculations.
 
