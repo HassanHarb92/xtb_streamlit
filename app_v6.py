@@ -93,23 +93,39 @@ def extract_results(output_file):
         st.error(f"Error extracting results: {e}")
     return None
 
+# Function to extract frequencies from g98.out file
+def extract_frequencies(frequency_file):
+    frequencies = []
+    try:
+        with open(frequency_file, 'r') as file:
+            for line in file:
+                if "Frequencies --" in line:
+                    freqs = line.split()[2:]  # Get frequencies from the line
+                    frequencies.extend(freqs)  # Add frequencies to the list
+        return frequencies
+    except FileNotFoundError:
+        st.error(f"Frequency file {frequency_file} not found.")
+    except Exception as e:
+        st.error(f"Error extracting frequencies: {e}")
+    return None
+
 # Function to visualize XYZ file using py3Dmol
 def visualize_molecule(xyz_file):
     try:
         with open(xyz_file, 'r') as f:
             xyz = f.read()
         
-        viewer = py3Dmol.view(width=400, height=400)
+        viewer = py3Dmol.view(width=800, height=800)
         viewer.addModel(xyz, 'xyz')
         viewer.setStyle({'stick': {}, 'sphere': {'radius': 0.5}})
         viewer.zoomTo()
         viewer.show()
-        st.components.v1.html(viewer._make_html(), width=400, height=400, scrolling=False)
+        st.components.v1.html(viewer._make_html(), width=800, height=800, scrolling=False)
     except Exception as e:
         st.error(f"Error visualizing molecule: {e}")
 
 # Function to create a downloadable results file
-def create_results_file(energies, xyz_file):
+def create_results_file(energies, xyz_file, frequencies=None):
     result_text = "Calculation Results:\n"
     for key, value in energies.items():
         result_text += f"{key}: {value} Eh\n"
@@ -120,6 +136,10 @@ def create_results_file(energies, xyz_file):
             result_text += f.read()
     except FileNotFoundError:
         result_text += "XYZ file not found."
+
+    if frequencies:
+        result_text += "\nFrequencies (cm^-1):\n"
+        result_text += "\n".join(frequencies)
 
     return result_text
 
@@ -145,7 +165,7 @@ if optimize:
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    method = st.radio("Select method for xtb:", ['gfn0', 'gfn1', 'gfn2', 'gfnff'], index=2)
+    method = st.radio("Select method for xtb:", ['gfn1', 'gfn2', 'gfnff'], index=2)
 
 with col2:
     # Dropdown for solvation model
@@ -174,8 +194,10 @@ if st.button("Run"):
                 # Extract and display results
                 if thermochemistry:
                     energies = extract_results('xtb_hess_output.out')
+                    frequencies = extract_frequencies('g98.out')
                 else:
                     energies = extract_results('xtb_output.out')
+                    frequencies = None
 
                 if energies:
                     st.write(f"**Total Energy**: {energies.get('Energy', 'N/A')} Eh")
@@ -183,6 +205,12 @@ if st.button("Run"):
                         st.write(f"**Total Enthalpy**: {energies.get('Enthalpy', 'N/A')} Eh")
                         st.write(f"**Total Free Energy**: {energies.get('Free Energy', 'N/A')} Eh")
 
+                # Display lowest five frequencies if available
+                if frequencies:
+                    frequencies.sort()  # Sort frequencies to find the lowest ones
+                    lowest_frequencies = frequencies[:5]  # Get the lowest five frequencies
+                    st.write("**Lowest Frequencies (cm^-1):**")
+                    st.write(lowest_frequencies)
                 # Visualize optimized molecule if optimization was selected
                 if optimize and os.path.exists('xtbopt.xyz'):
                     st.write("**Optimized Molecule Structure**:")
@@ -191,7 +219,7 @@ if st.button("Run"):
                     st.write("No optimization was performed.")
                 
                 # Create downloadable results file
-                results_text = create_results_file(energies, 'xtbopt.xyz')
+                results_text = create_results_file(energies, 'xtbopt.xyz', frequencies)
                 st.download_button("Download Results", data=results_text, file_name="results.txt", mime="text/plain")
             else:
                 st.error("Failed to run calculation.")

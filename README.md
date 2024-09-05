@@ -1,6 +1,6 @@
 # xTB2go
 
-**Stable Version**: v5
+**Stable Version**: v6
 
 ## Dependencies
 
