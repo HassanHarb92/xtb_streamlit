@@ -47,10 +47,11 @@
 - `os`
 - `rdkit`
 - `py3Dmol`
+- `openai`
 
 ## In the works (sandbox)
 
-
+xTB calculator powered by large language model. Current version uses OpenAI API.
 
 ![LLM xTB Demo](video/LLM_xtb_demo.gif)
 
