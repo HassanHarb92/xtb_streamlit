@@ -92,6 +92,21 @@ def run_xtb_command(xtb_command):
         st.error(f"Error running xTB: {e}")
         return None
 
+# Function to parse energy from the xTB output file
+def extract_energy(output_file):
+    try:
+        with open(output_file, 'r') as file:
+            for line in file:
+                if "TOTAL ENERGY" in line:
+                    energy = line.split()[-3]  # Extract the energy value
+                    return energy
+        return None
+    except FileNotFoundError:
+        st.error(f"Output file {output_file} not found.")
+    except Exception as e:
+        st.error(f"Error extracting energy: {e}")
+        return None
+
 # Function to visualize XYZ file using py3Dmol
 def visualize_molecule(xyz_file):
     try:
@@ -129,11 +144,14 @@ if user_input:
         # Convert SMILES to XYZ
         if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
             # Run the xTB command
-            xtb_output = run_xtb_command(xtb_command)
+            xtb_output_file = 'xtb_output.out'
+            xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
+            run_xtb_command(xtb_command_with_output)
             
-            if xtb_output:
-                st.write("**xTB Output:**")
-                st.text(xtb_output)
+            # Extract and display the total energy
+            energy = extract_energy(xtb_output_file)
+            if energy:
+                st.write(f"**Total Energy:** {energy} Eh")
             
             # Visualize the molecule
             if os.path.exists(f'{molecule_name}.xyz'):
