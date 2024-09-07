@@ -68,3 +68,7 @@
    - **Thermochemistry Data** (if available)
 
 6. Run multiple jobs (from .csv file) and allow downloading csv output file
+
+7. Connect to PubChem API – Similarity search
+
+
