@@ -48,6 +48,13 @@
 - `rdkit`
 - `py3Dmol`
 
+## In the works (sandbox)
+
+[Watch LLM xTB Demo](video/LLM_xtb_demo.mov)
+
+
+
+
 ## To-Do List
 
 1. **Conformer Search with CREST**  
