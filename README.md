@@ -50,8 +50,9 @@
 
 ## In the works (sandbox)
 
-[Watch LLM xTB Demo](video/LLM_xtb_demo.mov)
 
+
+![LLM xTB Demo](video/LLM_xtb_demo.gif)
 
 
 
@@ -77,5 +78,4 @@
 6. Run multiple jobs (from .csv file) and allow downloading csv output file
 
 7. Connect to PubChem API – Similarity search
-
 
