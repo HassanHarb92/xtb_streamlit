@@ -1,12 +1,11 @@
-import streamlit as st
-import openai  # Assuming OpenAI API is used for LLM
+import openai
+import os
 import pubchempy as pcp
 import subprocess
-import os
 import py3Dmol
 from rdkit import Chem
 from rdkit.Chem import AllChem
-
+import streamlit as st
 
 # Initialize OpenAI API using environment variable
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -14,16 +13,13 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 if openai.api_key is None:
     raise ValueError("OpenAI API key not found. Please set the 'OPENAI_API_KEY' environment variable.")
 
-
-
-
-# Function to fetch SMILES from PubChem
+# Function to fetch SMILES string from PubChem
 def fetch_smiles(molecule_name):
     try:
         compound = pcp.get_compounds(molecule_name, 'name')[0]
         return compound.isomeric_smiles
     except Exception as e:
-        st.error(f"Error fetching SMILES: {e}")
+        st.error(f"Error fetching SMILES from PubChem: {e}")
         return None
 
 # Function to convert SMILES to XYZ
@@ -50,22 +46,41 @@ def smiles_to_xyz(smiles, output_filename):
         st.error(f"Error converting SMILES to XYZ: {e}")
         return False
 
-# Function to generate xTB command based on LLM output
+# Function to generate xTB command and extract molecule name based on user input
+def generate_xtb_command_and_molecule(prompt):
+    system_prompt = """
+    You are a computational chemistry assistant that generates xTB commands and identifies molecule names.
+    Only use valid xTB flags such as:
+    - '--chrg' for charge (followed by an integer)
+    - '--opt' for geometry optimization
+    - '--alpb' for implicit solvation (e.g., '--alpb water')
+    - '--gfn1', '--gfn2', '--gfnff' for the method
+    Do not use '--energy' or '--solvent' as they are not valid options.
+    Extract the molecule name and generate the corresponding xTB command.
+    Return the molecule name and xTB command in this format:
+    Molecule: [molecule name]
+    xTB command: [xtb command]
+    """
 
-def generate_xtb_command(prompt):
     response = openai.ChatCompletion.create(
-        model="gpt-4",  # You can also use 'gpt-3.5-turbo'
+        model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are an assistant that generates xTB commands."},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Generate an xtb command based on the following prompt: {prompt}"}
         ],
-        max_tokens=100
+        max_tokens=150
     )
-    xtb_command = response['choices'][0]['message']['content'].strip()
-    return xtb_command
 
+    response_text = response['choices'][0]['message']['content'].strip()
 
-# Function to run the generated xTB command
+    # Parsing the response to extract the molecule name and the xtb command
+    lines = response_text.split('\n')
+    molecule_name = lines[0].replace('Molecule: ', '').strip()
+    xtb_command = lines[1].replace('xTB command: ', '').strip()
+
+    return molecule_name, xtb_command
+
+# Function to run the xTB command
 def run_xtb_command(xtb_command):
     try:
         result = subprocess.run(xtb_command, shell=True, capture_output=True, text=True)
@@ -92,53 +107,40 @@ def visualize_molecule(xyz_file):
     except Exception as e:
         st.error(f"Error visualizing molecule: {e}")
 
-# Streamlit app interface
+# Streamlit interface
 st.title("LLM-Powered xTB Energy Calculator")
 
 # Input from the user
-user_input = st.text_input("Enter a command (e.g., 'Calculate the energy of aspirin in water with a charge of -1'):")
+user_input = st.text_input("Enter a command (e.g., 'Calculate the energy of aspirin'):")
 
 if user_input:
-    # Extract molecule name from user input
-    if 'of' in user_input:
-        molecule_name = user_input.split('of')[-1].strip().split()[0]
+    # Generate both the molecule name and the xTB command
+    molecule_name, xtb_command = generate_xtb_command_and_molecule(user_input)
+
+    st.write(f"**Molecule:** {molecule_name}")
+    st.write(f"**xTB Command:** `{xtb_command}`")
+    
+    # Fetch SMILES from PubChem
+    smiles = fetch_smiles(molecule_name)
+    
+    if smiles:
+        st.write(f"**SMILES for {molecule_name}:** {smiles}")
         
-        # Fetch SMILES from PubChem
-        smiles = fetch_smiles(molecule_name)
-        
-        if smiles:
-            st.write(f"**SMILES for {molecule_name}:** {smiles}")
+        # Convert SMILES to XYZ
+        if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
+            # Run the xTB command
+            xtb_output = run_xtb_command(xtb_command)
             
-            # Convert SMILES to XYZ
-            if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
-                # Generate xTB command based on user input and molecule name
-                xtb_command = generate_xtb_command(user_input, molecule_name, f'{molecule_name}.xyz')
-                
-                # Display the generated command
-                st.write(f"**xTB Command:** `{xtb_command}`")
-                
-                # Run the generated xTB command
-                xtb_output = run_xtb_command(xtb_command)
-                
-                if xtb_output:
-                    st.write("**xTB Output:**")
-                    st.text(xtb_output)
-                
-                # Visualize the molecule
-                if os.path.exists(f'{molecule_name}.xyz'):
-                    st.write("**Molecule Structure**:")
-                    visualize_molecule(f'{molecule_name}.xyz')
-            else:
-                st.error("Failed to generate XYZ file.")
+            if xtb_output:
+                st.write("**xTB Output:**")
+                st.text(xtb_output)
+            
+            # Visualize the molecule
+            if os.path.exists(f'{molecule_name}.xyz'):
+                st.write("**Molecule Structure**:")
+                visualize_molecule(f'{molecule_name}.xyz')
+        else:
+            st.error("Failed to generate XYZ file.")
     else:
-        st.error("Please specify a valid molecule in the format 'Calculate the energy of [molecule]'")
-
-
-
-
-
-
-
-
-
+        st.error(f"Could not fetch SMILES for {molecule_name}.")
 
