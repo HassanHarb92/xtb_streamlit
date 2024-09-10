@@ -94,19 +94,37 @@ def run_xtb_command(xtb_command):
         st.error(f"Error running xTB: {e}")
         return None
 
-# Function to parse energy from the xTB output file
-def extract_energy(output_file):
+# Function to push xTB output to OpenAI and parse relevant energies
+def parse_xtb_output_with_llm(output_file):
     try:
         with open(output_file, 'r') as file:
-            for line in file:
-                if "TOTAL ENERGY" in line:
-                    energy = line.split()[-3]  # Extract the energy value
-                    return energy
-        return None
-    except FileNotFoundError:
-        st.error(f"Output file {output_file} not found.")
+            xtb_output_content = file.read()
+
+        system_prompt = """
+        You are a computational chemistry assistant. 
+        Your task is to extract all relevant energy values from an xTB output file.
+        These may include:
+        - Total energy
+        - Enthalpy
+        - Free energy
+        - HOMO-LUMO gap
+        Provide the extracted values clearly, with labels for each energy.
+        """
+
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Here is the xTB output:\n{xtb_output_content}"}
+            ],
+            max_tokens=200
+        )
+
+        parsed_output = response['choices'][0]['message']['content'].strip()
+        return parsed_output
+
     except Exception as e:
-        st.error(f"Error extracting energy: {e}")
+        st.error(f"Error parsing xTB output with LLM: {e}")
         return None
 
 # Function to visualize XYZ file using py3Dmol
@@ -150,10 +168,11 @@ if user_input:
             xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
             run_xtb_command(xtb_command_with_output)
             
-            # Extract and display the total energy
-            energy = extract_energy(xtb_output_file)
-            if energy:
-                st.write(f"**Total Energy:** {energy} Eh")
+            # Send xTB output to LLM for parsing
+            parsed_output = parse_xtb_output_with_llm(xtb_output_file)
+            if parsed_output:
+                st.write("**Extracted Energy Values from xTB Output:**")
+                st.write(parsed_output)
             
             # Visualize the molecule
             if os.path.exists(f'{molecule_name}.xyz'):
