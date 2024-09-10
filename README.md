@@ -49,12 +49,12 @@
 - `py3Dmol`
 - `openai`
 
-## In the works (sandbox)
+## In the works:
 
 xTB calculator powered by large language model. Current version uses OpenAI API.
 
-Version 1: One LLM assistant --> gets xTB command line from prompt & SMILES from PubChem
-Version 2: Two LLM assistants --> Second one parses the xTB output file to get energies and properties
+- **Version 1**: One LLM assistant --> gets xTB command line from prompt & SMILES from PubChem
+- **Version 2**: Two LLM assistants --> Second one parses the xTB output file to get energies and properties
 
 ![LLM xTB Demo](video/LLM_xtb_demo.gif)
 
