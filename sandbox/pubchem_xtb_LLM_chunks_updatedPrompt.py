@@ -46,28 +46,16 @@ def smiles_to_xyz(smiles, output_filename):
         st.error(f"Error converting SMILES to XYZ: {e}")
         return False
 
+# Function to load the system prompt from a file
+def load_system_prompt(filename):
+    with open(filename, 'r') as file:
+        return file.read()
+
 # Function to generate xTB command and extract molecule name based on user input
 def generate_xtb_command_and_molecule(prompt):
-    system_prompt = """
-    You are a computational chemistry assistant that generates xTB commands and identifies molecule names.
-    You can also recommend similar molecules when asked.
-    Only use valid xTB flags such as:
-    - '--chrg' for charge (followed by an integer)
-    - '--opt' for geometry optimization
-    - '--alpb' for implicit solvation (e.g., '--alpb acetonitrile')
-    - '--gfn1', '--gfn2', '--gfnff' for the method
-    - for frequency analysis you need to use --hess
-
-    Do not use '--energy' or '--solvent' as they are not valid options.
-    If the user asks for a molecule similar to another, suggest one.
-    Extract the molecule name and generate the corresponding xTB command.
-    Return the molecule name and xTB command in this format:
-    Molecule: [molecule name]
-    xTB command: [xtb command]
-    """
-
+    system_prompt = load_system_prompt('llm_prompt.txt')
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Generate an xtb command based on the following prompt: {prompt}"}
