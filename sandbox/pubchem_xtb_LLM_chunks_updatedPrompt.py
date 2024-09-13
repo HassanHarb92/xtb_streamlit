@@ -180,40 +180,43 @@ def visualize_molecule(xyz_file):
 st.title("LLM-Powered xTB Energy Calculator")
 
 # Input from the user
-user_input = st.text_input("Enter a command (e.g., 'Calculate the energy of aspirin' or 'Suggest a molecule similar to aspirin'):")
+#user_input = st.text_input("Enter a command (e.g., 'Calculate the energy of aspirin' or 'Suggest a molecule similar to aspirin'):")
+user_input = st.text_area("Enter a command (e.g., 'Calculate the energy of aspirin' or 'Suggest a molecule similar to aspirin'):", height=150)
 
-if user_input:
-    # Generate both the molecule name and the xTB command
-    molecule_name, xtb_command = generate_xtb_command_and_molecule(user_input)
+if st.button("Submit"):
+    if user_input:
+        # Generate both the molecule name and the xTB command
+        molecule_name, xtb_command = generate_xtb_command_and_molecule(user_input)
 
-    st.write(f"**Molecule:** {molecule_name}")
-    st.write(f"**xTB Command:** `{xtb_command}`")
-    
-    # Fetch SMILES from PubChem
-    smiles = fetch_smiles(molecule_name)
-    
-    if smiles:
-        st.write(f"**SMILES for {molecule_name}:** {smiles}")
-        
-        # Convert SMILES to XYZ
-        if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
-            # Run the xTB command
-            xtb_output_file = 'xtb_output.out'
-            xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
-            run_xtb_command(xtb_command_with_output)
+        st.write(f"**Molecule:** {molecule_name}")
+        st.write(f"**xTB Command:** `{xtb_command}`")
+
+        # Fetch SMILES from PubChem
+        smiles = fetch_smiles(molecule_name)
+
+        if smiles:
+            st.write(f"**SMILES for {molecule_name}:** {smiles}")
             
-            # Send xTB output to LLM in chunks
-            parsed_output = parse_xtb_output_in_chunks(xtb_output_file)
-            if parsed_output:
-                st.write("**Extracted Energy Values from xTB Output:**")
-                st.write(parsed_output)
-            
-            # Visualize the molecule
-            if os.path.exists(f'{molecule_name}.xyz'):
-                st.write("**Molecule Structure**:")
-                visualize_molecule(f'{molecule_name}.xyz')
+            # Convert SMILES to XYZ
+            if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
+                # Run the xTB command
+                xtb_output_file = 'xtb_output.out'
+                xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
+                run_xtb_command(xtb_command_with_output)
+
+                # Send xTB output to LLM in chunks
+                parsed_output = parse_xtb_output_in_chunks(xtb_output_file)
+                if parsed_output:
+                    st.write("**Extracted Energy Values from xTB Output:**")
+                    st.write(parsed_output)
+
+                # Visualize the molecule
+                if os.path.exists(f'{molecule_name}.xyz'):
+                    st.write("**Molecule Structure**:")
+                    visualize_molecule(f'{molecule_name}.xyz')
+            else:
+                st.error("Failed to generate XYZ file.")
         else:
-            st.error("Failed to generate XYZ file.")
+            st.error(f"Could not fetch SMILES for {molecule_name}.")
     else:
-        st.error(f"Could not fetch SMILES for {molecule_name}.")
-
+        st.error("Please enter a valid command.")
