@@ -62,7 +62,7 @@ def generate_xtb_command_and_molecule(prompt):
         return None, None
 
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Generate an xtb command based on the following prompt: {prompt}"}
@@ -132,7 +132,7 @@ def parse_xtb_output_in_chunks(output_file):
         for i in range(0, len(filtered_content), chunk_size):
             chunk = filtered_content[i:i + chunk_size]
             response = openai.ChatCompletion.create(
-                model="gpt-4",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"Here is a portion of the xTB output:\n{chunk}"}

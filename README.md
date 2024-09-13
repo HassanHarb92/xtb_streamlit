@@ -56,6 +56,7 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 - **Version 1**: One LLM assistant --> gets xTB command line from prompt & SMILES from PubChem
 - **Version 2**: Two LLM assistants --> Second one parses the xTB output file to get energies and properties
 - Current working version: pubchem_xtb_LLM_chunks_separated_prompt.py
+- xTB memory errors are showing up..
 ![LLM xTB Demo](video/LLM_xtb_demo.gif)
 
 
