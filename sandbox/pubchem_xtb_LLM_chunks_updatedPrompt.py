@@ -49,25 +49,19 @@ def smiles_to_xyz(smiles, output_filename):
 # Function to generate xTB command and extract molecule name based on user input
 def generate_xtb_command_and_molecule(prompt):
     system_prompt = """
-    You are a computational chemistry assistant with expertise in organic and inorganic chemistry.
-    Your task is to identify molecules, functional groups, and structural fragments from user input.
-    You can generate valid xTB commands and recommend similar molecules when requested.
-    
-    Recognize and interpret molecular descriptions or fragments given by the user, but always return a **single specific molecule**.
-    Do not suggest multiple possibilities. Instead, choose one molecule based on the user's description.
-    
+    You are a computational chemistry assistant that generates xTB commands and identifies molecule names.
+    You can also recommend similar molecules when asked.
     Only use valid xTB flags such as:
     - '--chrg' for charge (followed by an integer)
     - '--opt' for geometry optimization
-    - '--alpb' for implicit solvation (e.g., '--alpb water')
+    - '--alpb' for implicit solvation (e.g., '--alpb acetonitrile')
     - '--gfn1', '--gfn2', '--gfnff' for the method
     - for frequency analysis you need to use --hess
-    
-    If the user mentions a molecular fragment or functional group, identify **one** molecule based on the description.
-    
-    Return the molecule name and generate a corresponding xTB command.
-    
-    Ensure the response is in this format:
+
+    Do not use '--energy' or '--solvent' as they are not valid options.
+    If the user asks for a molecule similar to another, suggest one.
+    Extract the molecule name and generate the corresponding xTB command.
+    Return the molecule name and xTB command in this format:
     Molecule: [molecule name]
     xTB command: [xtb command]
     """
@@ -90,8 +84,6 @@ def generate_xtb_command_and_molecule(prompt):
 
     return molecule_name, xtb_command
 
-
-
 # Function to run the xTB command
 def run_xtb_command(xtb_command):
     try:
@@ -104,61 +96,19 @@ def run_xtb_command(xtb_command):
         st.error(f"Error running xTB: {e}")
         return None
 
-# Function to filter xTB output for relevant lines
-def filter_xtb_output(output_file):
-    relevant_lines = []
-    keywords = ["TOTAL ENERGY", "ENTHALPY", "FREE ENERGY", "HOMO-LUMO GAP"]
-
+# Function to parse energy from the xTB output file
+def extract_energy(output_file):
     try:
         with open(output_file, 'r') as file:
             for line in file:
-                if any(keyword in line for keyword in keywords):
-                    relevant_lines.append(line)
-
-        return ''.join(relevant_lines)  # Return filtered content as a single string
-    except Exception as e:
-        st.error(f"Error filtering xTB output: {e}")
+                if "TOTAL ENERGY" in line:
+                    energy = line.split()[-3]  # Extract the energy value
+                    return energy
         return None
-
-# Function to send xTB output to LLM in chunks
-def parse_xtb_output_in_chunks(output_file):
-    filtered_content = filter_xtb_output(output_file)
-    
-    if not filtered_content:
-        return None
-
-    chunk_size = 500  # Define the size of each chunk in characters
-    parsed_output = ""
-
-    system_prompt = """
-    You are a computational chemistry assistant. 
-    Your task is to extract all relevant energy values from an xTB output file.
-    These may include:
-    - Total energy
-    - Enthalpy
-    - Free energy
-    - HOMO-LUMO gap
-    Provide the extracted values clearly, with labels for each energy.
-    """
-
-    try:
-        for i in range(0, len(filtered_content), chunk_size):
-            chunk = filtered_content[i:i + chunk_size]
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Here is a portion of the xTB output:\n{chunk}"}
-                ],
-                max_tokens=200
-            )
-
-            parsed_output += response['choices'][0]['message']['content'].strip() + "\n"
-
-        return parsed_output
-
+    except FileNotFoundError:
+        st.error(f"Output file {output_file} not found.")
     except Exception as e:
-        st.error(f"Error parsing xTB output with LLM in chunks: {e}")
+        st.error(f"Error extracting energy: {e}")
         return None
 
 # Function to visualize XYZ file using py3Dmol
@@ -180,9 +130,9 @@ def visualize_molecule(xyz_file):
 st.title("LLM-Powered xTB Energy Calculator")
 
 # Input from the user
-#user_input = st.text_input("Enter a command (e.g., 'Calculate the energy of aspirin' or 'Suggest a molecule similar to aspirin'):")
 user_input = st.text_area("Enter a command (e.g., 'Calculate the energy of aspirin' or 'Suggest a molecule similar to aspirin'):", height=150)
 
+# Add a "Submit" button
 if st.button("Submit"):
     if user_input:
         # Generate both the molecule name and the xTB command
@@ -204,11 +154,10 @@ if st.button("Submit"):
                 xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
                 run_xtb_command(xtb_command_with_output)
 
-                # Send xTB output to LLM in chunks
-                parsed_output = parse_xtb_output_in_chunks(xtb_output_file)
-                if parsed_output:
-                    st.write("**Extracted Energy Values from xTB Output:**")
-                    st.write(parsed_output)
+                # Extract and display the total energy
+                energy = extract_energy(xtb_output_file)
+                if energy:
+                    st.write(f"**Total Energy:** {energy} Eh")
 
                 # Visualize the molecule
                 if os.path.exists(f'{molecule_name}.xyz'):
@@ -220,3 +169,4 @@ if st.button("Submit"):
             st.error(f"Could not fetch SMILES for {molecule_name}.")
     else:
         st.error("Please enter a valid command.")
+
