@@ -199,6 +199,9 @@ if st.button("Submit"):
                         st.write(parsed_output)
                     
                     # Visualize the molecule
+                    copy_command = f'mv xtbopt.xyz {molecule_name}.xyz'
+                    subprocess.run(copy_command, shell=True, capture_output=True, text=True)     
+                    print (f"Molecule name {molecule_name}.xyz")
                     if os.path.exists(f'{molecule_name}.xyz'):
                         st.write("**Molecule Structure**:")
                         visualize_molecule(f'{molecule_name}.xyz')
