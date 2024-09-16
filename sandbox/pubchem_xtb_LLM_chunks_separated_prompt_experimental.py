@@ -65,7 +65,25 @@ def generate_xtb_command_and_molecule(prompt):
         model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Generate an xtb command based on the following prompt: {prompt}"}
+            {"role": "user", "content": f"""
+You are a computational chemistry expert with deep knowledge of molecular structures, chemical reactions, and xTB calculations. 
+
+Please generate an xTB command or suggest molecules based on the following user request:
+
+Task: {prompt}
+
+Interpret the user’s request carefully and provide:
+1. A **specific molecule name** if the user is requesting a molecule or a similar structure.
+2. A valid **xTB command** if the user is asking for a calculation.
+3. Any **modifications** (such as changes to molecular structures or charge) that may be necessary based on the user's request.
+
+Always return the **molecule name** and the **xTB command** in this format:
+Molecule: [molecule name]
+xTB command: [xtb command]
+"""
+            }
+
+            #{"role": "user", "content": f"Generate an xtb command based on the following prompt: {prompt}"}
         ],
         max_tokens=150
     )
@@ -178,10 +196,11 @@ if st.button("Submit"):
         if molecule_name and xtb_command:
             st.write(f"**Molecule:** {molecule_name}")
             st.write(f"**xTB Command:** `{xtb_command}`")
+#            molecule_name = molecule_name.replace(" ", "_")
 
             # Fetch SMILES from PubChem
             smiles = fetch_smiles(molecule_name)
-
+            molecule_name = molecule_name.replace(" ", "_")
             if smiles:
                 st.write(f"**SMILES for {molecule_name}:** {smiles}")
                 
