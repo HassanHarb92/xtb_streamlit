@@ -184,7 +184,7 @@ if st.button("Submit"):
 
             if smiles:
                 st.write(f"**SMILES for {molecule_name}:** {smiles}")
-                
+                molecule_name = molecule_name.replace(" ", "_")                
                 # Convert SMILES to XYZ
                 if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
                     # Run the xTB command
