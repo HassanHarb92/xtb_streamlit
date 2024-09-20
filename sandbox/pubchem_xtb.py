@@ -136,7 +136,7 @@ if st.button("Go"):
                     charge = st.number_input("Charge:", value=0, step=1, format="%d", min_value=-10, max_value=10, label_visibility="collapsed")
                 
                 # Select method and solvent
-                method = st.radio("Select method for xtb:", ['gfn1', 'gfn2', 'gfnff'], index=2)
+                method = st.radio("Select method for xtb:", ['gfn1', 'gfn2'], index=1)
                 solvent = st.selectbox("Select solvation model:", ['none', 'alpb', 'gbsa'], index=0)
                 
                 solvent_name = ''

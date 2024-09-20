@@ -1,3 +1,4 @@
+import pandas as pd
 import openai
 import os
 import pubchempy as pcp
@@ -6,6 +7,7 @@ import py3Dmol
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import streamlit as st
+import json
 
 # Initialize OpenAI API using environment variable
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -55,47 +57,33 @@ def read_system_prompt(file_path):
         st.error(f"Error reading system prompt from file: {e}")
         return None
 
-# Function to generate xTB command and extract molecule name based on user input
+# Function to generate xTB command and extract molecule names based on user input
 def generate_xtb_command_and_molecule(prompt):
-    system_prompt = read_system_prompt("xtb_system_prompt_experimental.txt")
+    system_prompt = read_system_prompt("xtb_system_prompt.txt")
     if system_prompt is None:
         return None, None
 
     response = openai.ChatCompletion.create(
-        model="gpt-4o",
+        model="gpt-4",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"""
-You are a computational chemistry expert with deep knowledge of molecular structures, chemical reactions, and xTB calculations. 
-
-Please generate an xTB command or suggest molecules based on the following user request:
-
-Task: {prompt}
-
-Interpret the user’s request carefully and provide:
-1. A **specific molecule name** if the user is requesting a molecule or a similar structure.
-2. A valid **xTB command** if the user is asking for a calculation.
-3. Any **modifications** (such as changes to molecular structures or charge) that may be necessary based on the user's request.
-
-Always return the **molecule name** and the **xTB command** in this format:
-Molecule: [molecule name]
-xTB command: [xtb command]
-"""
-            }
-
-            #{"role": "user", "content": f"Generate an xtb command based on the following prompt: {prompt}"}
+            {"role": "user", "content": f"Generate xtb commands for multiple molecules based on the following prompt: {prompt}"}
         ],
         max_tokens=150
     )
 
     response_text = response['choices'][0]['message']['content'].strip()
 
-    # Parsing the response to extract the molecule name and the xtb command
-    lines = response_text.split('\n')
-    molecule_name = lines[0].replace('Molecule: ', '').strip()
-    xtb_command = lines[1].replace('xTB command: ', '').strip()
-
-    return molecule_name, xtb_command
+    # Extract molecule names and xTB commands
+    molecule_data = []
+    for line in response_text.split('\n'):
+        if "Molecule:" in line:
+            molecule_name = line.replace('Molecule:', '').strip()
+        if "xTB command:" in line:
+            xtb_command = line.replace('xTB command:', '').strip()
+            molecule_data.append((molecule_name, xtb_command))
+    
+    return molecule_data
 
 # Function to run the xTB command
 def run_xtb_command(xtb_command):
@@ -109,10 +97,11 @@ def run_xtb_command(xtb_command):
         st.error(f"Error running xTB: {e}")
         return None
 
-# Function to filter xTB output for relevant lines
-def filter_xtb_output(output_file):
+# Function to filter xTB output for relevant lines and return JSON format
+def filter_xtb_output(output_file, molecule_name):
     relevant_lines = []
     keywords = ["TOTAL ENERGY", "ENTHALPY", "FREE ENERGY", "HOMO-LUMO GAP"]
+    json_data = {}
 
     try:
         with open(output_file, 'r') as file:
@@ -120,50 +109,16 @@ def filter_xtb_output(output_file):
                 if any(keyword in line for keyword in keywords):
                     relevant_lines.append(line)
 
-        return ''.join(relevant_lines)  # Return filtered content as a single string
+        json_data['molecule'] = molecule_name
+        json_data['energies'] = ''.join(relevant_lines)
+
+        # Save to JSON
+        with open(f'{molecule_name}.json', 'w') as json_file:
+            json.dump(json_data, json_file)
+        
+        return json_data  # Return the JSON data for further use
     except Exception as e:
         st.error(f"Error filtering xTB output: {e}")
-        return None
-
-# Function to send xTB output to LLM in chunks
-def parse_xtb_output_in_chunks(output_file):
-    filtered_content = filter_xtb_output(output_file)
-    
-    if not filtered_content:
-        return None
-
-    chunk_size = 500  # Define the size of each chunk in characters
-    parsed_output = ""
-
-    system_prompt = """
-    You are a computational chemistry assistant. 
-    Your task is to extract all relevant energy values from an xTB output file.
-    These may include:
-    - Total energy
-    - Enthalpy
-    - Free energy
-    - HOMO-LUMO gap
-    Provide the extracted values clearly, with labels for each energy.
-    """
-
-    try:
-        for i in range(0, len(filtered_content), chunk_size):
-            chunk = filtered_content[i:i + chunk_size]
-            response = openai.ChatCompletion.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Here is a portion of the xTB output:\n{chunk}"}
-                ],
-                max_tokens=200
-            )
-
-            parsed_output += response['choices'][0]['message']['content'].strip() + "\n"
-
-        return parsed_output
-
-    except Exception as e:
-        st.error(f"Error parsing xTB output with LLM in chunks: {e}")
         return None
 
 # Function to visualize XYZ file using py3Dmol
@@ -185,49 +140,58 @@ def visualize_molecule(xyz_file):
 st.title("LLM-Powered xTB Energy Calculator")
 
 # Input from the user
-user_input = st.text_area("Enter a command (e.g., 'Calculate the energy of aspirin' or 'Suggest a molecule similar to aspirin'):", height=100)
+user_input = st.text_area("Enter a command for multiple molecules (e.g., 'Calculate the energy of aspirin and paracetamol'):", height=150)
 
 # Add a "Submit" button
 if st.button("Submit"):
     if user_input:
-        # Generate both the molecule name and the xTB command
-        molecule_name, xtb_command = generate_xtb_command_and_molecule(user_input)
+        # Generate molecule data and xTB commands
+        molecule_data = generate_xtb_command_and_molecule(user_input)
 
-        if molecule_name and xtb_command:
-            st.write(f"**Molecule:** {molecule_name}")
-            st.write(f"**xTB Command:** `{xtb_command}`")
-#            molecule_name = molecule_name.replace(" ", "_")
+        if molecule_data:
+            molecules_info = []
+            for molecule_name, xtb_command in molecule_data:
+                st.write(f"**Molecule:** {molecule_name}")
+                st.write(f"**xTB Command:** `{xtb_command}`")
 
-            # Fetch SMILES from PubChem
-            smiles = fetch_smiles(molecule_name)
-            molecule_name = molecule_name.replace(" ", "_")
-            if smiles:
-                st.write(f"**SMILES for {molecule_name}:** {smiles}")
-                
-                # Convert SMILES to XYZ
-                if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
-                    # Run the xTB command
-                    xtb_output_file = 'xtb_output.out'
-                    xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
-                    run_xtb_command(xtb_command_with_output)
+                # Fetch SMILES from PubChem
+                smiles = fetch_smiles(molecule_name)
 
-                    # Send xTB output to LLM in chunks
-                    parsed_output = parse_xtb_output_in_chunks(xtb_output_file)
-                    if parsed_output:
-                        st.write("**Extracted Energy Values from xTB Output:**")
-                        st.write(parsed_output)
+                if smiles:
+                    st.write(f"**SMILES for {molecule_name}:** {smiles}")
+                    molecule_name = molecule_name.replace(" ", "_")                
                     
-                    # Visualize the molecule
-                    copy_command = f'mv xtbopt.xyz {molecule_name}.xyz'
-                    subprocess.run(copy_command, shell=True, capture_output=True, text=True)     
-                    print (f"Molecule name {molecule_name}.xyz")
-                    if os.path.exists(f'{molecule_name}.xyz'):
-                        st.write("**Molecule Structure**:")
-                        visualize_molecule(f'{molecule_name}.xyz')
+                    # Convert SMILES to XYZ
+                    if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
+                        # Run the xTB command
+                        xtb_output_file = 'xtb_output.out'
+                        xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
+                        run_xtb_command(xtb_command_with_output)
+
+                        # Extract energies and save to JSON
+                        json_data = filter_xtb_output(xtb_output_file, molecule_name)
+                        molecules_info.append(json_data)
+
+                    else:
+                        st.error("Failed to generate XYZ file.")
                 else:
-                    st.error("Failed to generate XYZ file.")
-            else:
-                st.error(f"Could not fetch SMILES for {molecule_name}.")
+                    st.error(f"Could not fetch SMILES for {molecule_name}.")
+
+            # Display molecule table with energies
+            if molecules_info:
+                st.write("**Molecules Data:**")
+                molecules_df = pd.DataFrame(molecules_info)
+                st.table(molecules_df[['molecule', 'energies']])
+
+            # Dropdown to select and visualize the molecule
+            molecule_choices = [info['molecule'] for info in molecules_info]
+            selected_molecule = st.selectbox("Select a molecule to visualize:", molecule_choices)
+
+            if selected_molecule:
+                st.write(f"Visualizing {selected_molecule}")
+                visualize_molecule(f'{selected_molecule}.xyz')
+        else:
+            st.error("Failed to generate molecule data.")
     else:
         st.error("Please enter a valid command.")
 
