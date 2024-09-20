@@ -1,4 +1,4 @@
-import pandas as pd
+
 import openai
 import os
 import pubchempy as pcp
@@ -7,6 +7,7 @@ import py3Dmol
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import streamlit as st
+import pandas as pd
 import json
 
 # Initialize OpenAI API using environment variable
@@ -139,6 +140,12 @@ def visualize_molecule(xyz_file):
 # Streamlit interface
 st.title("LLM-Powered xTB Energy Calculator")
 
+# Initialize session state for storing molecule data and selections
+if 'molecules_info' not in st.session_state:
+    st.session_state.molecules_info = []
+if 'selected_molecule' not in st.session_state:
+    st.session_state.selected_molecule = None
+
 # Input from the user
 user_input = st.text_area("Enter a command for multiple molecules (e.g., 'Calculate the energy of aspirin and paracetamol'):", height=150)
 
@@ -177,21 +184,15 @@ if st.button("Submit"):
                 else:
                     st.error(f"Could not fetch SMILES for {molecule_name}.")
 
-            # Display molecule table with energies
-            if molecules_info:
-                st.write("**Molecules Data:**")
-                molecules_df = pd.DataFrame(molecules_info)
-                st.table(molecules_df[['molecule', 'energies']])
+            # Store molecule information in session state
+            st.session_state.molecules_info = molecules_info
 
-            # Dropdown to select and visualize the molecule
-            molecule_choices = [info['molecule'] for info in molecules_info]
-            selected_molecule = st.selectbox("Select a molecule to visualize:", molecule_choices)
+# Dropdown to select and visualize the molecule
+if st.session_state.molecules_info:
+    molecule_choices = [info['molecule'] for info in st.session_state.molecules_info]
+    selected_molecule = st.selectbox("Select a molecule to visualize:", molecule_choices, key='molecule_dropdown')
 
-            if selected_molecule:
-                st.write(f"Visualizing {selected_molecule}")
-                visualize_molecule(f'{selected_molecule}.xyz')
-        else:
-            st.error("Failed to generate molecule data.")
-    else:
-        st.error("Please enter a valid command.")
+    if selected_molecule:
+        st.write(f"Visualizing {selected_molecule}")
+        visualize_molecule(f'{selected_molecule}.xyz')
 
