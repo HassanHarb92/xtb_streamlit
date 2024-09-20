@@ -1,4 +1,3 @@
-
 import openai
 import os
 import pubchempy as pcp
@@ -158,14 +157,10 @@ if st.button("Submit"):
         if molecule_data:
             molecules_info = []
             for molecule_name, xtb_command in molecule_data:
-                st.write(f"**Molecule:** {molecule_name}")
-                st.write(f"**xTB Command:** `{xtb_command}`")
-
                 # Fetch SMILES from PubChem
                 smiles = fetch_smiles(molecule_name)
 
                 if smiles:
-                    st.write(f"**SMILES for {molecule_name}:** {smiles}")
                     molecule_name = molecule_name.replace(" ", "_")                
                     
                     # Convert SMILES to XYZ
@@ -178,14 +173,14 @@ if st.button("Submit"):
                         # Extract energies and save to JSON
                         json_data = filter_xtb_output(xtb_output_file, molecule_name)
                         molecules_info.append(json_data)
-
-                    else:
-                        st.error("Failed to generate XYZ file.")
-                else:
-                    st.error(f"Could not fetch SMILES for {molecule_name}.")
-
+                    
             # Store molecule information in session state
             st.session_state.molecules_info = molecules_info
+
+# Display the table with molecule information
+if st.session_state.molecules_info:
+    molecule_table = pd.DataFrame(st.session_state.molecules_info)
+    st.table(molecule_table)
 
 # Dropdown to select and visualize the molecule
 if st.session_state.molecules_info:
