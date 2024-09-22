@@ -22,12 +22,16 @@ def fetch_smiles_and_properties(molecule_name):
         smiles = compound.isomeric_smiles
 
         # Fetch physical properties (molecular weight, boiling point, etc.)
-        molecular_weight = compound.molecular_weight
+        molecular_weight = compound.molecular_weight if hasattr(compound, 'molecular_weight') else 'N/A'
+        boiling_point = compound.boiling_point if hasattr(compound, 'boiling_point') else 'N/A'
+        melting_point = compound.melting_point if hasattr(compound, 'melting_point') else 'N/A'
+        exact_mass = compound.exact_mass if hasattr(compound, 'exact_mass') else 'N/A'
+        
         properties = {
             "Molecular Weight": molecular_weight,
-            "Boiling Point": compound.boiling_point,
-            "Melting Point": compound.melting_point,
-            "Exact Mass": compound.exact_mass,
+            "Boiling Point": boiling_point,
+            "Melting Point": melting_point,
+            "Exact Mass": exact_mass,
         }
         return smiles, properties
     except Exception as e:
