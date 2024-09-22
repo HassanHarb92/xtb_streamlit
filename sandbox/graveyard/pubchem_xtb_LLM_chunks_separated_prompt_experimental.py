@@ -15,24 +15,14 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 if openai.api_key is None:
     raise ValueError("OpenAI API key not found. Please set the 'OPENAI_API_KEY' environment variable.")
 
-# Function to fetch SMILES string and properties from PubChem
-def fetch_smiles_and_properties(molecule_name):
+# Function to fetch SMILES string from PubChem
+def fetch_smiles(molecule_name):
     try:
         compound = pcp.get_compounds(molecule_name, 'name')[0]
-        smiles = compound.isomeric_smiles
-
-        # Fetch physical properties (molecular weight, boiling point, etc.)
-        molecular_weight = compound.molecular_weight
-        properties = {
-            "Molecular Weight": molecular_weight,
-            "Boiling Point": compound.boiling_point,
-            "Melting Point": compound.melting_point,
-            "Exact Mass": compound.exact_mass,
-        }
-        return smiles, properties
+        return compound.isomeric_smiles
     except Exception as e:
-        st.error(f"Error fetching data from PubChem for {molecule_name}: {e}")
-        return None, None
+        st.error(f"Error fetching SMILES from PubChem: {e}")
+        return None
 
 # Function to convert SMILES to XYZ
 def smiles_to_xyz(smiles, output_filename):
@@ -71,7 +61,7 @@ def read_system_prompt(file_path):
 def generate_xtb_command_and_molecule(prompt):
     system_prompt = read_system_prompt("xtb_system_prompt.txt")
     if system_prompt is None:
-        return None
+        return None, None
 
     response = openai.ChatCompletion.create(
         model="gpt-4",
@@ -91,8 +81,7 @@ def generate_xtb_command_and_molecule(prompt):
             molecule_name = line.replace('Molecule:', '').strip()
         if "xTB command:" in line:
             xtb_command = line.replace('xTB command:', '').strip()
-            if molecule_name and xtb_command:
-                molecule_data.append((molecule_name, xtb_command))
+            molecule_data.append((molecule_name, xtb_command))
     
     return molecule_data
 
@@ -168,13 +157,8 @@ if st.button("Submit"):
         if molecule_data:
             molecules_info = []
             for molecule_name, xtb_command in molecule_data:
-                # Ensure molecule_name is properly assigned
-                if not molecule_name:
-                    st.error("Molecule name could not be identified.")
-                    continue
-
-                # Fetch SMILES and properties from PubChem
-                smiles, properties = fetch_smiles_and_properties(molecule_name)
+                # Fetch SMILES from PubChem
+                smiles = fetch_smiles(molecule_name)
 
                 if smiles:
                     molecule_name = molecule_name.replace(" ", "_")                
@@ -188,18 +172,7 @@ if st.button("Submit"):
 
                         # Extract energies and save to JSON
                         json_data = filter_xtb_output(xtb_output_file, molecule_name)
-                        
-                        # Append SMILES, energies, and PubChem properties to the molecule info
-                        molecule_entry = {
-                            'Molecule': molecule_name,
-                            'SMILES': smiles,
-                            'Molecular Weight': properties.get('Molecular Weight', 'N/A'),
-                            'Boiling Point': properties.get('Boiling Point', 'N/A'),
-                            'Melting Point': properties.get('Melting Point', 'N/A'),
-                            'Exact Mass': properties.get('Exact Mass', 'N/A'),
-                            'Energies': json_data.get('energies', 'N/A')
-                        }
-                        molecules_info.append(molecule_entry)
+                        molecules_info.append(json_data)
                     
             # Store molecule information in session state
             st.session_state.molecules_info = molecules_info
@@ -211,7 +184,7 @@ if st.session_state.molecules_info:
 
 # Dropdown to select and visualize the molecule
 if st.session_state.molecules_info:
-    molecule_choices = [info['Molecule'] for info in st.session_state.molecules_info]
+    molecule_choices = [info['molecule'] for info in st.session_state.molecules_info]
     selected_molecule = st.selectbox("Select a molecule to visualize:", molecule_choices, key='molecule_dropdown')
 
     if selected_molecule:
