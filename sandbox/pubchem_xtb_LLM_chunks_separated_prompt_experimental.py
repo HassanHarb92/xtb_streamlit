@@ -78,7 +78,7 @@ def generate_xtb_command_and_molecule(prompt):
         return None
 
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Generate xtb commands for multiple molecules based on the following prompt: {prompt}"}
