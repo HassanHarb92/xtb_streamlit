@@ -1,3 +1,7 @@
+## xtb command not working
+## visualize molecule not working
+
+
 import openai
 import os
 import pubchempy as pcp
@@ -137,19 +141,65 @@ def filter_xtb_output(output_file, molecule_name):
         return None
 
 # Function to visualize XYZ file using py3Dmol
-def visualize_molecule(xyz_file):
+
+# Function to parse xTB output using GPT-4 and extract relevant information
+def parse_xtb_output_with_llm(output_file, molecule_name):
+    system_prompt = """
+    You are a computational chemistry assistant. 
+    Your task is to intelligently parse the xTB output file and extract all relevant chemical information.
+    This may include:
+    - Total energy
+    - Enthalpy
+    - Free energy
+    - HOMO-LUMO gap
+    - Dipole moment
+    - Any other available properties
+    Provide a clear, structured summary of the extracted information.
+    Return the information in JSON format where possible.
+    """
+
     try:
-        with open(xyz_file, 'r') as f:
-            xyz = f.read()
-        
-        viewer = py3Dmol.view(width=800, height=800)
-        viewer.addModel(xyz, 'xyz')
-        viewer.setStyle({'stick': {}, 'sphere': {'radius': 0.5}})
-        viewer.zoomTo()
-        viewer.show()
-        st.components.v1.html(viewer._make_html(), width=800, height=800, scrolling=False)
+        with open(output_file, 'r') as file:
+            xtb_output = file.read()
+
+        # Chunk the xTB output if it's too long for the model
+        chunk_size = 4000  # Adjust based on the model's context length
+        parsed_output = ""
+
+        for i in range(0, len(xtb_output), chunk_size):
+            chunk = xtb_output[i:i + chunk_size]
+            
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Here is a portion of the xTB output for {molecule_name}:\n{chunk}"}
+                ],
+                max_tokens=300  # Adjust based on expected output
+            )
+
+            parsed_output += response['choices'][0]['message']['content'].strip()
+
+        # Process the GPT-4 response to extract relevant data
+        json_data = {"molecule": molecule_name}
+
+        # Parse output as JSON if GPT-4 returns it in that format
+        try:
+            json_data.update(json.loads(parsed_output))
+        except json.JSONDecodeError:
+            # If not in JSON format, just store the raw parsed text
+            json_data['parsed_data'] = parsed_output
+
+        # Save to JSON file
+        with open(f'{molecule_name}.json', 'w') as json_file:
+            json.dump(json_data, json_file)
+
+        return json_data  # Return the JSON data for further use
+
     except Exception as e:
-        st.error(f"Error visualizing molecule: {e}")
+        st.error(f"Error parsing xTB output with GPT-4: {e}")
+        return None
+
 
 # Streamlit interface
 st.title("LLM-Powered xTB Energy Calculator")
@@ -163,7 +213,7 @@ if 'selected_molecule' not in st.session_state:
 # Input from the user
 user_input = st.text_area("Enter a command for multiple molecules (e.g., 'Calculate the energy of aspirin and paracetamol'):", height=150)
 
-# Add a "Submit" button
+# Main function where xTB output parsing happens
 if st.button("Submit"):
     if user_input:
         # Generate molecule data and xTB commands
@@ -190,9 +240,9 @@ if st.button("Submit"):
                         xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
                         run_xtb_command(xtb_command_with_output)
 
-                        # Extract energies and save to JSON
-                        json_data = filter_xtb_output(xtb_output_file, molecule_name)
-                        
+                        # Parse xTB output using GPT-4 and extract relevant data
+                        json_data = parse_xtb_output_with_llm(xtb_output_file, molecule_name)
+
                         # Append SMILES, energies, and PubChem properties to the molecule info
                         molecule_entry = {
                             'Molecule': molecule_name,
@@ -201,10 +251,10 @@ if st.button("Submit"):
                             'Boiling Point': properties.get('Boiling Point', 'N/A'),
                             'Melting Point': properties.get('Melting Point', 'N/A'),
                             'Exact Mass': properties.get('Exact Mass', 'N/A'),
-                            'Energies': json_data.get('energies', 'N/A')
+                            'Parsed Data': json_data.get('parsed_data', 'N/A')  # Data from GPT-4
                         }
                         molecules_info.append(molecule_entry)
-                    
+
             # Store molecule information in session state
             st.session_state.molecules_info = molecules_info
 
