@@ -1,0 +1,1 @@
+{"molecule": "Chlorogenic_acid", "parsed_xtb_output": "Here is the extracted key information from the xTB output:\n\n{\n  \"Molecule Name\": \"Chlorogenic_acid\",\n  \"Total Energy\": \"-80.001663644250 Eh\",\n  \"Gradient Norm\": \"0.194680499263 Eh/\u03b1\",\n  \"HOMO-LUMO Gap\": \"2.439203725868 eV\"\n}"}

@@ -15,6 +15,7 @@ def filter_xtb_output_gpt(output_file, molecule_name):
     system_prompt = (
         "You are an expert in computational chemistry. Extract key information "
         "from xTB output such as Total Energy, Enthalpy, Free Energy, and HOMO-LUMO Gap."
+        "You should give the results in JSON format, this format will have column for the name, SMILES, properties that are available."
     )
     
     # Send xTB output to GPT for parsing
