@@ -16,6 +16,7 @@ if 'selected_molecule' not in st.session_state:
 
 user_input = st.text_area("Enter a command for multiple molecules (e.g., 'Calculate the energy of aspirin and paracetamol'):", height=150)
 
+
 from filter_xtb_output_gpt import filter_xtb_output_gpt
 
 # Modify this section in main.py:
@@ -42,17 +43,20 @@ if st.button("Submit"):
                     
             st.session_state.molecules_info = molecules_info
 
+
+
 if st.session_state.molecules_info:
     molecule_table = pd.DataFrame(st.session_state.molecules_info)
     st.table(molecule_table)
 
-# Ensure molecules_info is always a list
-if 'molecules_info' not in st.session_state or st.session_state.molecules_info is None:
-    st.session_state.molecules_info = []
+#### HH++
 
 if st.session_state.molecules_info:
     molecule_choices = [info['molecule'] for info in st.session_state.molecules_info]
     selected_molecule = st.selectbox("Select a molecule to visualize:", molecule_choices, key='molecule_dropdown')
+
+
+#### HH--
 
     if selected_molecule:
         st.write(f"Visualizing {selected_molecule}")
