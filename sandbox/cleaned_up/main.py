@@ -38,7 +38,8 @@ if st.button("Submit"):
 
                         # Use GPT to filter the xTB output
                         json_data = filter_xtb_output_gpt(xtb_output_file, molecule_name)
-                        molecules_info.append(json_data)
+                        if json_data is not None:
+                            molecules_info.append(json_data)
                     
             st.session_state.molecules_info = molecules_info
 
@@ -47,11 +48,11 @@ if st.session_state.molecules_info:
     st.table(molecule_table)
 
 # Ensure molecules_info is always a list
-if 'molecules_info' not in st.session_state or st.session_state.molecules_info is None:
+if 'molecules_info' not in st.session_state or not isinstance(st.session_state.molecules_info, list):
     st.session_state.molecules_info = []
 
 if st.session_state.molecules_info:
-    molecule_choices = [info['molecule'] for info in st.session_state.molecules_info]
+    molecule_choices = [info['molecule'] for info in st.session_state.molecules_info if info is not None and 'molecule' in info]
     selected_molecule = st.selectbox("Select a molecule to visualize:", molecule_choices, key='molecule_dropdown')
 
     if selected_molecule:

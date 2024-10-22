@@ -76,7 +76,7 @@
    J. Seibert, P. Shushkov, S. Spicher, M. Stahn, M. Steiner, T. Strunk,
    J. Stückrath, T. Rose, and J. Unsleber
    
- * started run on 2024/10/22 at 09:29:39.166     
+ * started run on 2024/10/22 at 09:37:23.054     
 
            -------------------------------------------------
           |                Calculation Setup                |
@@ -151,7 +151,7 @@
    8    -33.1600432 -0.301933E-05  0.550E-03    3.46       4.1  T
    9    -33.1600433 -0.353231E-07  0.217E-03    3.46      10.3  T
   10    -33.1600433 -0.446993E-07  0.950E-04    3.46      23.5  T
-  11    -33.1600433 -0.785190E-08  0.307E-04    3.46      72.9  T
+  11    -33.1600433 -0.785185E-08  0.307E-04    3.46      72.9  T
 
    *** convergence criteria satisfied after 11 iterations ***
 
@@ -177,14 +177,14 @@
                   HL-Gap            0.1271576 Eh            3.4601 eV
              Fermi-level           -0.3065589 Eh           -8.3419 eV
 
- SCC (total)                   0 d,  0 h,  0 min,  0.020 sec
- SCC setup                      ...        0 min,  0.001 sec (  2.842%)
- Dispersion                     ...        0 min,  0.000 sec (  1.110%)
- classical contributions        ...        0 min,  0.000 sec (  0.172%)
- integral evaluation            ...        0 min,  0.001 sec (  3.437%)
- iterations                     ...        0 min,  0.016 sec ( 79.299%)
- molecular gradient             ...        0 min,  0.002 sec (  9.079%)
- printout                       ...        0 min,  0.001 sec (  3.963%)
+ SCC (total)                   0 d,  0 h,  0 min,  0.019 sec
+ SCC setup                      ...        0 min,  0.001 sec (  3.034%)
+ Dispersion                     ...        0 min,  0.000 sec (  1.258%)
+ classical contributions        ...        0 min,  0.000 sec (  0.288%)
+ integral evaluation            ...        0 min,  0.001 sec (  3.628%)
+ iterations                     ...        0 min,  0.016 sec ( 82.722%)
+ molecular gradient             ...        0 min,  0.002 sec (  7.920%)
+ printout                       ...        0 min,  0.000 sec (  1.017%)
 
          :::::::::::::::::::::::::::::::::::::::::::::::::::::
          ::                     SUMMARY                     ::
@@ -330,14 +330,14 @@ molecular quadrupole (traceless):
 ########################################################################
 
 ------------------------------------------------------------------------
- * finished run on 2024/10/22 at 09:29:39.469     
+ * finished run on 2024/10/22 at 09:37:23.377     
 ------------------------------------------------------------------------
  total:
- * wall-time:     0 d,  0 h,  0 min,  0.303 sec
- *  cpu-time:     0 d,  0 h,  0 min,  1.782 sec
- * ratio c/w:     5.892 speedup
+ * wall-time:     0 d,  0 h,  0 min,  0.323 sec
+ *  cpu-time:     0 d,  0 h,  0 min,  1.871 sec
+ * ratio c/w:     5.800 speedup
  SCF:
  * wall-time:     0 d,  0 h,  0 min,  0.020 sec
- *  cpu-time:     0 d,  0 h,  0 min,  0.129 sec
- * ratio c/w:     6.289 speedup
+ *  cpu-time:     0 d,  0 h,  0 min,  0.124 sec
+ * ratio c/w:     6.310 speedup
 

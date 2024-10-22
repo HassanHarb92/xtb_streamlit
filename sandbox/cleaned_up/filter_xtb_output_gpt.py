@@ -1,5 +1,6 @@
 import openai
 import streamlit as st
+import json
 
 def filter_xtb_output_gpt(output_file, molecule_name):
     # Read the xTB output file
@@ -27,7 +28,14 @@ def filter_xtb_output_gpt(output_file, molecule_name):
             max_tokens=200
         )
 
+        if 'choices' not in response or len(response['choices']) == 0:
+            st.error("GPT response is empty or invalid.")
+            return None
+
         parsed_output = response['choices'][0]['message']['content'].strip()
+        if not parsed_output:
+            st.error("Parsed output from GPT is empty.")
+            return None
         
         # Save the parsed output to a JSON file
         json_data = {
@@ -35,8 +43,12 @@ def filter_xtb_output_gpt(output_file, molecule_name):
             "parsed_xtb_output": parsed_output
         }
         
-        with open(f'{molecule_name}_parsed.json', 'w') as json_file:
-            json.dump(json_data, json_file)
+        try:
+            with open(f'{molecule_name}_parsed.json', 'w') as json_file:
+                json.dump(json_data, json_file)
+        except Exception as e:
+            st.error(f"Error saving parsed output to JSON file: {e}")
+            return None
         
         return json_data
 
