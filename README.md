@@ -74,12 +74,20 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 4. **Ionization Potentials and Electron Affinities**  
    Introduce an option to calculate ionization potentials and electron affinities for molecules.
 
-5. **Additional Outputs**  
+5. **Additional Outputs**  *Done* (This can be done by parsing the output with LLM)
    Add options to print:
-   - **HOMO-LUMO Gap**
+   - **HOMO-LUMO Gap** 
    - **Thermochemistry Data** (if available)
+   - **Output format in JSON / csv**
 
 6. Run multiple jobs (from .csv file) and allow downloading csv output file
 
-7. Connect to PubChem API – Similarity search
+7. Connect to PubChem API – Similarity search *Done*
+
+8. Connect to ChemSpider: waiting for website to update APIs
+
+
+
+
+
 
