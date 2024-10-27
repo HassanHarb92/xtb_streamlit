@@ -86,7 +86,7 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 8. Connect to ChemSpider: waiting for website to update APIs
 
-
+9. Expand on the LLM Prompt
 
 
 
