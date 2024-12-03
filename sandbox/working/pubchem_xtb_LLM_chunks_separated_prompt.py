@@ -118,7 +118,8 @@ def parse_xtb_output_in_chunks(output_file):
     parsed_output = ""
 
     system_prompt = """
-    You are a computational chemistry assistant. 
+    You are a computational chemistry assistant.
+    You will be handed an output file from xtb calculation, you will analyze that file and provide a detailed result on what the file contains. This includes understanding the type of calculation that was conducted, the possible results that the calculation can get and what data you whould be looking for. 
     Your task is to extract all relevant energy values from an xTB output file.
     These may include:
     - Total energy
@@ -184,7 +185,8 @@ if st.button("Submit"):
 
             if smiles:
                 st.write(f"**SMILES for {molecule_name}:** {smiles}")
-                molecule_name = molecule_name.replace(" ", "_")                
+                molecule_name = molecule_name.replace(" ", "_")
+#                molecule_name = molecule_name.replace(",","-")                
                 # Convert SMILES to XYZ
                 if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
                     # Run the xTB command
