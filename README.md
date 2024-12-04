@@ -58,6 +58,14 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 - Current working version: pubchem_xtb_LLM_chunks_separated_prompt.py
 ![LLM xTB Demo](video/LLM_xtb_demo.gif)
 
+## Ongoing work
+
+1. Debugging experimental examples, some are still causing errors.
+
+2. Experiment with system prompt to improve xtb results analysis.
+
+3. Clean up output.
+
 
 
 ## To-Do List
