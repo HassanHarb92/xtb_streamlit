@@ -66,7 +66,7 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 3. Clean up output.
 
-
+4. Add functionality to choose different softwares (e.g. Gaussian) and generate input files.
 
 ## To-Do List
 
