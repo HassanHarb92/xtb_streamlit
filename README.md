@@ -68,6 +68,7 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 4. Add functionality to choose different softwares (e.g. Gaussian) and generate input files.
 
+
 ## To-Do List
 
 1. **Conformer Search with CREST**  
@@ -96,6 +97,6 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 9. Expand on the LLM Prompt
 
-
+10. ML integration (think more about this)
 
 
