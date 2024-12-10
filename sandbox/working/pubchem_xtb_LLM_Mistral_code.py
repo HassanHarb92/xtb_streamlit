@@ -8,6 +8,7 @@ from rdkit.Chem import AllChem
 import streamlit as st
 import pandas as pd
 import json
+import io
 
 # Initialize OpenAI API using environment variable
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -190,6 +191,15 @@ if st.button("Submit"):
 if st.session_state.molecules_info:
     molecule_table = pd.DataFrame(st.session_state.molecules_info)
     st.table(molecule_table)
+
+    # Add a "Download" button to download the data as CSV
+    csv = molecule_table.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download data as CSV",
+        data=csv,
+        file_name='molecule_data.csv',
+        mime='text/csv',
+    )
 
 # Dropdown to select and visualize the molecule
 if st.session_state.molecules_info:
