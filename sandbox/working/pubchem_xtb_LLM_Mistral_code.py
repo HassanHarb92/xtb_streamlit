@@ -82,7 +82,7 @@ def generate_xtb_command_and_molecule(prompt):
             if "Molecule:" in line:
                 molecule_name = line.replace('Molecule:', '').strip()
             if "xTB command:" in line and molecule_name:
-                xtb_command = line.replace('xTB command:', ).strip()
+                xtb_command = line.replace('xTB command:', '').strip()
                 molecule_data.append((molecule_name, xtb_command))
                 molecule_name = None
 
@@ -168,14 +168,15 @@ if st.button("Submit"):
 
                 if smiles:
                     molecule_name = molecule_name.replace(" ", "_")
+                    xyz_filename = f'{molecule_name}.xyz'
 
                     # Convert SMILES to XYZ
-                    if smiles_to_xyz(smiles, f'{molecule_name}.xyz'):
+                    if smiles_to_xyz(smiles, xyz_filename):
+                        # Construct the xTB command with the correct output redirection
+                        xtb_output_file = f'{molecule_name}_xtb_output.out'
+                        xtb_command_with_output = f"{xtb_command} {xyz_filename} > {xtb_output_file}"
+
                         # Run the xTB command
-                          
-                        xtb_output_file = 'xtb_output.out'
-                        xtb_command_with_output = f"{xtb_command} > {xtb_output_file}"
-                        print("xtb command: ", xtb_command_with_output)
                         run_xtb_command(xtb_command_with_output)
 
                         # Extract energies and save to JSON
