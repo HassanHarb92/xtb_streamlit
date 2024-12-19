@@ -95,7 +95,7 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 8. Connect to ChemSpider: waiting for website to update APIs
 
-9. Expand on the LLM Prompt
+9. Expand on the LLM Prompt: Notes on what types of agents can we build.
 
 10. ML integration (think more about this)
 
