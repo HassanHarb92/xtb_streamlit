@@ -99,4 +99,4 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 10. ML integration (think more about this)
 
-
+11. Generative AI (check notes from Google Drive)
