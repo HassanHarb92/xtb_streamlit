@@ -11,14 +11,13 @@ st.title("💬 Socratic Chatbot for Chemistry & Materials")
 # Sidebar with options
 with st.sidebar:
     # "Download Script" button for conversation history
-    if st.button("Download Script"):
-        script = "\n".join([f'{msg["role"]}: {msg["content"]}' for msg in st.session_state.get("messages", [])])
-        st.download_button(
-            label="Download Conversation",
-            data=script,
-            file_name="socratic_chat_script.txt",
-            mime="text/plain",
-        )
+    script = "\n".join([f'{msg["role"]}: {msg["content"]}' for msg in st.session_state.get("messages", [])])
+    st.download_button(
+        label="Download Script",
+        data=script,
+        file_name="socratic_chat_script.txt",
+        mime="text/plain",
+    )
 
     # "Reset Chat" button
     if st.button("Reset Chat"):
@@ -74,9 +73,10 @@ for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input("Enter your prompt"):
+    st.session_state["messages"].append({"role": "user", "content": prompt})
+
     # Convert the user's input to a Socratic prompt and generate follow-ups
     socratic_response = generate_socratic_prompt(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
 
     # Extract Socratic prompt and follow-up questions
     if "Socratic Prompt:" in socratic_response and "Follow-Up Questions:" in socratic_response:
@@ -96,12 +96,17 @@ if prompt := st.chat_input("Enter your prompt"):
     # Query the main LLM with the Socratic prompt
     llm_response = query_llm(socratic_prompt)
     st.session_state.messages.append({"role": "assistant", "content": llm_response})
-    st.chat_message("assistant").write(llm_response)
 
-    # Display follow-up questions
-    st.markdown("### Suggested Follow-Up Questions:")
-    for i, follow_up in enumerate(follow_ups, 1):
-        if follow_up.strip():
-            if st.button(f"Follow-Up {i}: {follow_up.strip()}"):
-                st.experimental_rerun()
+    # Add follow-up questions to the chat
+    for i, question in enumerate(follow_ups, 1):
+        question = question.strip()
+        if question:
+            follow_up_button = st.button(f"Follow-Up {i}: {question}")
+            if follow_up_button:
+                st.session_state["messages"].append({"role": "user", "content": question})
+                st.experimental_rerun()  # Treat the follow-up as a new prompt
+
+    # Display everything in the chat
+    st.chat_message("assistant").write(f"Socratic Prompt: {socratic_prompt}")
+    st.chat_message("assistant").write(llm_response)
 
