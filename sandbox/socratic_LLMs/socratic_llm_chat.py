@@ -2,7 +2,7 @@ import streamlit as st
 import openai
 import os
 
-# Set the OpenAI API key from environment variables
+# Set the OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # App title
@@ -68,15 +68,10 @@ def query_llm(prompt):
     )
     return response["choices"][0]["message"]["content"]
 
-# Chat interface
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
-
-if prompt := st.chat_input("Enter your prompt"):
-    st.session_state["messages"].append({"role": "user", "content": prompt})
-
+# Function to handle the workflow for user input or follow-up
+def handle_input(user_input):
     # Convert the user's input to a Socratic prompt and generate follow-ups
-    socratic_response = generate_socratic_prompt(prompt)
+    socratic_response = generate_socratic_prompt(user_input)
 
     # Extract Socratic prompt and follow-up questions
     if "Socratic Prompt:" in socratic_response and "Follow-Up Questions:" in socratic_response:
@@ -91,22 +86,32 @@ if prompt := st.chat_input("Enter your prompt"):
         follow_ups = ["No follow-up questions generated."]
 
     # Add the Socratic prompt to the chat
-    st.session_state.messages.append({"role": "assistant", "content": f"Socratic Prompt: {socratic_prompt}"})
+    st.session_state["messages"].append({"role": "assistant", "content": f"Socratic Prompt: {socratic_prompt}"})
 
     # Query the main LLM with the Socratic prompt
     llm_response = query_llm(socratic_prompt)
-    st.session_state.messages.append({"role": "assistant", "content": llm_response})
+    st.session_state["messages"].append({"role": "assistant", "content": llm_response})
 
-    # Add follow-up questions to the chat
-    for i, question in enumerate(follow_ups, 1):
-        question = question.strip()
-        if question:
-            follow_up_button = st.button(f"Follow-Up {i}: {question}")
-            if follow_up_button:
-                st.session_state["messages"].append({"role": "user", "content": question})
-                st.experimental_rerun()  # Treat the follow-up as a new prompt
+    # Store follow-up questions in session state for interactivity
+    st.session_state["follow_ups"] = follow_ups
 
-    # Display everything in the chat
-    st.chat_message("assistant").write(f"Socratic Prompt: {socratic_prompt}")
-    st.chat_message("assistant").write(llm_response)
+# Process and display chat history
+for msg in st.session_state.messages:
+    st.chat_message(msg["role"]).write(msg["content"])
+
+# Handle new user input or follow-up question
+if prompt := st.chat_input("Enter your prompt"):
+    st.session_state["messages"].append({"role": "user", "content": prompt})
+    handle_input(prompt)
+    st.experimental_rerun()
+
+# Display follow-up questions as clickable buttons
+if "follow_ups" in st.session_state:
+    st.markdown("### Follow-Up Questions")
+    for i, question in enumerate(st.session_state["follow_ups"], 1):
+        if st.button(f"Follow-Up {i}: {question.strip()}"):
+            # Treat follow-up as a new user prompt
+            st.session_state["messages"].append({"role": "user", "content": question.strip()})
+            handle_input(question.strip())
+            st.experimental_rerun()
 
