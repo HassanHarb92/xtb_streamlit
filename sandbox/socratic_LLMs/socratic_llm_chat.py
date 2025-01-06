@@ -10,10 +10,17 @@ st.title("💬 Socratic Chatbot for Chemistry & Materials")
 
 # Sidebar with options
 with st.sidebar:
+    # "Download Script" button for conversation history
     if st.button("Download Script"):
         script = "\n".join([f'{msg["role"]}: {msg["content"]}' for msg in st.session_state.get("messages", [])])
-        st.download_button("Download Conversation", script, file_name="socratic_chat_script.txt")
+        st.download_button(
+            label="Download Conversation",
+            data=script,
+            file_name="socratic_chat_script.txt",
+            mime="text/plain",
+        )
 
+    # "Reset Chat" button
     if st.button("Reset Chat"):
         st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
         st.experimental_rerun()
@@ -82,6 +89,9 @@ if prompt := st.chat_input("Enter your prompt"):
     else:
         socratic_prompt = "Error: Socratic prompt not generated. Please refine your input."
         follow_ups = ["No follow-up questions generated."]
+
+    # Add the Socratic prompt to the chat
+    st.session_state.messages.append({"role": "assistant", "content": f"Socratic Prompt: {socratic_prompt}"})
 
     # Query the main LLM with the Socratic prompt
     llm_response = query_llm(socratic_prompt)
