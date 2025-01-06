@@ -2,109 +2,96 @@ import streamlit as st
 import openai
 import os
 
-# App Sidebar
+# Set the OpenAI API key from environment variables
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# App title
+st.title("💬 Socratic Chatbot for Chemistry & Materials")
+
+# Sidebar with options
 with st.sidebar:
-    openai_api_key = os.getenv('OPENAI_API_KEY') # st.text_input("OpenAI API Key", type="password")
-    st.markdown("[Get an OpenAI API key](https://platform.openai.com/account/api-keys)")
-    st.markdown("[View the source code](https://github.com/streamlit/llm-examples/blob/main/Chatbot.py)")
+    if st.button("Download Script"):
+        script = "\n".join([f'{msg["role"]}: {msg["content"]}' for msg in st.session_state.get("messages", [])])
+        st.download_button("Download Conversation", script, file_name="socratic_chat_script.txt")
 
-# App Title
-st.title("🧠 Socratic Chemistry Chatbot")
+    if st.button("Reset Chat"):
+        st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+        st.experimental_rerun()
 
-# Initialize session state
+# Initialize chat history
 if "messages" not in st.session_state:
-    st.session_state["messages"] = []
-if "socratic_prompt" not in st.session_state:
-    st.session_state["socratic_prompt"] = ""
-if "follow_up_questions" not in st.session_state:
-    st.session_state["follow_up_questions"] = []
+    st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
 
-# Functions
-def get_socratic_prompt(user_prompt):
-    """First agent to convert user prompt into a Socratic prompt with follow-up questions."""
-    system_prompt = """
-    You are a Socratic assistant specializing in chemistry and materials discovery. 
-    Your role is to:
-    1. Convert user input into a Socratic prompt that encourages critical thinking and exploration.
-    2. Generate three follow-up questions based on the topic for deeper exploration.
+# Function for Socratic prompt generation
+def generate_socratic_prompt(user_prompt):
+    socratic_system_prompt = """
+    You are a Socratic assistant specializing in chemistry and materials discovery. Your role is to transform user prompts into Socratic prompts that encourage critical thinking, exploration, and refinement of ideas. You must also generate three follow-up questions to deepen inquiry.
 
-    Output format:
+    When transforming user input:
+    1. Reformulate the prompt into a Socratic prompt by clarifying terms, encouraging exploration, and guiding iterative reasoning.
+    2. Ensure the Socratic prompt is focused, precise, and adheres to the principles of the Socratic method (clarification, exploration, and critical thinking).
+    3. Generate three follow-up questions related to the same topic that align with Socratic principles and drive further exploration.
+
+    **Output Format**:
     Socratic Prompt:
-    [Your Socratic prompt here]
+    [Your transformed Socratic prompt here]
 
     Follow-Up Questions:
     1. [First follow-up question]
     2. [Second follow-up question]
     3. [Third follow-up question]
     """
-    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
     response = openai.ChatCompletion.create(
         model="gpt-4",
-        messages=messages,
+        messages=[
+            {"role": "system", "content": socratic_system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
         max_tokens=500,
         temperature=0.7,
     )
     return response["choices"][0]["message"]["content"]
 
-def get_model_response(prompt):
-    """Second agent to get the LLM's response based on the Socratic prompt."""
-    messages = [{"role": "user", "content": prompt}]
+# Function for querying the main LLM
+def query_llm(prompt):
     response = openai.ChatCompletion.create(
         model="gpt-4",
-        messages=messages,
+        messages=[{"role": "user", "content": prompt}],
         max_tokens=1000,
         temperature=0.7,
     )
     return response["choices"][0]["message"]["content"]
 
-# User input
-if prompt := st.chat_input():
-    if not openai_api_key:
-        st.info("Please add your OpenAI API key to continue.")
-        st.stop()
-
-    # Get Socratic Prompt and Follow-Up Questions
-    socratic_output = get_socratic_prompt(prompt)
-    try:
-        socratic_prompt = socratic_output.split("Socratic Prompt:")[1].split("Follow-Up Questions:")[0].strip()
-        follow_up_questions = socratic_output.split("Follow-Up Questions:")[1].strip()
-    except IndexError:
-        socratic_prompt = "Error parsing Socratic prompt. Please try again."
-        follow_up_questions = "Error parsing follow-up questions. Please try again."
-
-    # Save Socratic prompt and follow-ups
-    st.session_state.socratic_prompt = socratic_prompt
-    st.session_state.follow_up_questions = follow_up_questions.split("\n")
-
-    # Get response to the Socratic prompt
-    response = get_model_response(socratic_prompt)
-
-    # Save messages
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.messages.append({"role": "assistant", "content": response})
-
-# Display chat messages
+# Chat interface
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-# Display follow-up questions
-if st.session_state.follow_up_questions:
-    st.markdown("### Follow-Up Questions:")
-    for i, question in enumerate(st.session_state.follow_up_questions, start=1):
-        if st.button(f"Ask: {question}", key=f"follow_up_{i}"):
-            follow_up_response = get_model_response(question)
-            st.session_state.messages.append({"role": "user", "content": question})
-            st.session_state.messages.append({"role": "assistant", "content": follow_up_response})
-            st.chat_message("user").write(question)
-            st.chat_message("assistant").write(follow_up_response)
+if prompt := st.chat_input("Enter your prompt"):
+    # Convert the user's input to a Socratic prompt and generate follow-ups
+    socratic_response = generate_socratic_prompt(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-# Download button
-if st.button("Download Script"):
-    chat_history = "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in st.session_state.messages])
-    st.download_button(
-        label="Download Conversation",
-        data=chat_history,
-        file_name="socratic_chemistry_chat.txt",
-        mime="text/plain",
-    )
+    # Extract Socratic prompt and follow-up questions
+    if "Socratic Prompt:" in socratic_response and "Follow-Up Questions:" in socratic_response:
+        try:
+            socratic_prompt = socratic_response.split("Socratic Prompt:")[1].split("Follow-Up Questions:")[0].strip()
+            follow_ups = socratic_response.split("Follow-Up Questions:")[1].strip().split("\n")
+        except IndexError:
+            socratic_prompt = "Error parsing Socratic prompt. Please try again."
+            follow_ups = ["Error parsing follow-up questions. Please try again."]
+    else:
+        socratic_prompt = "Error: Socratic prompt not generated. Please refine your input."
+        follow_ups = ["No follow-up questions generated."]
+
+    # Query the main LLM with the Socratic prompt
+    llm_response = query_llm(socratic_prompt)
+    st.session_state.messages.append({"role": "assistant", "content": llm_response})
+    st.chat_message("assistant").write(llm_response)
+
+    # Display follow-up questions
+    st.markdown("### Suggested Follow-Up Questions:")
+    for i, follow_up in enumerate(follow_ups, 1):
+        if follow_up.strip():
+            if st.button(f"Follow-Up {i}: {follow_up.strip()}"):
+                st.experimental_rerun()
 
