@@ -1,7 +1,6 @@
 import streamlit as st
 import openai
 import os
-from graphviz import Digraph
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 
@@ -39,15 +38,6 @@ def get_response(user_prompt, temperature=0.7):
     reply = response["choices"][0]["message"]["content"]
     st.session_state.messages.append({"role": "assistant", "content": reply})
     return reply
-
-# Function to visualize dialogue
-def visualize_dialogue(prompt, follow_ups):
-    dot = Digraph()
-    dot.node("User Input", prompt)
-    for i, question in enumerate(follow_ups.split("\n")):
-        dot.node(f"Q{i+1}", question)
-        dot.edge("User Input", f"Q{i+1}")
-    return dot
 
 # Load vectorstore for RAG
 embeddings = OpenAIEmbeddings()
@@ -132,10 +122,6 @@ if st.button("Submit"):
             auto_response = get_response(auto_prompt, temperature=selected_temperature)
             st.markdown("### Answer to the Socratic Prompt")
             st.markdown(auto_response)
-
-        # Visualize dialogue
-        st.markdown("### Dialogue Visualization")
-        st.graphviz_chart(visualize_dialogue(user_input, follow_ups))
 
 # Save conversation
 if st.button("Export Conversation"):
