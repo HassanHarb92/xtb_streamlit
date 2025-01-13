@@ -6,33 +6,59 @@ import os
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Streamlit App Title
-st.title("AI-Powered Book Q&A with RAG")
+st.title("AI-Powered Scientific Paper Introduction Generator")
 
 # Sidebar Configuration
 st.sidebar.markdown("### Settings")
 selected_temperature = st.sidebar.slider("Response Creativity (Temperature)", min_value=0.0, max_value=1.0, value=0.7)
 
 # Input Section
-st.text("Ask a question about the Socratic book:")
-user_input = st.text_input("Your Question:")
+st.text("Provide guidelines for your scientific paper's introduction:")
+user_input = st.text_area("Your Guidelines:")
 
-# Define RAG Function to Answer Questions Based on the Book
-def answer_question_with_rag(question):
+# Path to the introduction guide PDF
+intro_guide_path = "/Users/hassan/Downloads/intro_paper.pdf"
+
+# Function to read and process the PDF guide
+def process_intro_guide(file_path):
     try:
-        # RAG-enhanced prompt
+        with open(file_path, "r") as file:
+            content = file.read()
+        return content
+    except Exception as e:
+        return f"An error occurred while reading the guide: {e}"
+
+# RAG Function to Generate Introductions Based on the Guide
+def generate_intro_with_rag(guidelines):
+    try:
+        # Load the content of the guide
+        guide_content = process_intro_guide(intro_guide_path)
+
+        # Enhanced RAG prompt for stronger introductions
         rag_prompt = f"""
-        You are an assistant who answers questions specifically based on the content of a book about Socratic questioning. Use only the content of the book to answer the user's query.
+        You are an expert in scientific writing with a focus on creating impactful introductions for research papers. Below is a comprehensive guide on writing strong introductions:
 
-        Question: {question}
+        {guide_content}
 
-        Provide a clear, concise answer based on the book's content.
+        Using this guide, construct a compelling introduction based on the user's guidelines. Follow these instructions:
+
+        1. Begin with a powerful opening sentence that captures the significance of the topic.
+        2. Contextualize the research area by referencing key challenges, existing gaps, or opportunities in the field.
+        3. Clearly articulate the purpose of the study and its broader relevance to science, technology, or society.
+        4. Expand on the user's provided guidelines, ensuring logical flow and elaboration of key points.
+        5. Maintain clarity, specificity, and adherence to scientific writing conventions while avoiding generic statements.
+
+        User Guidelines:
+        {guidelines}
+
+        Ensure the introduction is well-structured, logically developed, and exceeds the quality expected in high-impact journals.
         """
 
         # Query the OpenAI model
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[{"role": "system", "content": rag_prompt}],
-            max_tokens=500,
+            max_tokens=5000,
             temperature=selected_temperature,
         )
 
@@ -42,19 +68,18 @@ def answer_question_with_rag(question):
         return f"An error occurred: {e}"
 
 # Handle Submission
-if st.button("Submit"):
+if st.button("Generate Introduction"):
     if user_input:
-        answer = answer_question_with_rag(user_input)
-        st.markdown("### Answer")
-        st.markdown(answer)
+        introduction = generate_intro_with_rag(user_input)
+        st.markdown("### Generated Introduction")
+        st.markdown(introduction)
 
-# Export Conversation
-if st.button("Export Conversation"):
+# Export Generated Introduction
+if st.button("Export Introduction"):
     try:
-        with open("conversation.md", "w") as f:
-            for message in st.session_state.get("messages", []):
-                f.write(f"{message['role'].capitalize()}: {message['content']}\n")
-        st.success("Conversation exported successfully!")
+        with open("generated_introduction.md", "w") as f:
+            f.write(introduction)
+        st.success("Introduction exported successfully!")
     except Exception as e:
-        st.error(f"Failed to export conversation: {e}")
+        st.error(f"Failed to export the introduction: {e}")
 
