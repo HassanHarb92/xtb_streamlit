@@ -9,6 +9,7 @@ perplexity_api_key = os.getenv('PERPLEXITY_API_KEY')
 
 # Streamlit App Title
 st.title("AI-Powered Scientific Paper Introduction Generator")
+st.write("this is an experimetnal code, not yet fully working with perplexity")
 
 # Sidebar Configuration
 st.sidebar.markdown("### Settings")
