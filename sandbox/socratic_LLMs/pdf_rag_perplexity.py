@@ -1,9 +1,11 @@
 import streamlit as st
 import openai
 import os
+import requests
 
 # Initialize the OpenAI API key
 openai.api_key = os.getenv('OPENAI_API_KEY')
+perplexity_api_key = os.getenv('PERPLEXITY_API_KEY')
 
 # Streamlit App Title
 st.title("AI-Powered Scientific Paper Introduction Generator")
@@ -27,6 +29,25 @@ def process_intro_guide(file_path):
         return content
     except Exception as e:
         return f"An error occurred while reading the guide: {e}"
+
+# Function to query Perplexity API for citations
+def get_citations(text):
+    try:
+        headers = {
+            "Authorization": f"Bearer {perplexity_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {"query": text, "num_results": 5}
+        response = requests.post("https://api.perplexity.ai/v1/search", headers=headers, json=payload)
+
+        if response.status_code == 200:
+            results = response.json().get("results", [])
+            citations = [result.get("url", "No URL Found") for result in results]
+            return citations
+        else:
+            return [f"Error: {response.status_code} - {response.text}"]
+    except Exception as e:
+        return [f"An error occurred while fetching citations: {e}"]
 
 # RAG Function to Generate Introductions Based on the Guide
 def generate_intro_with_rag(guidelines):
@@ -75,6 +96,17 @@ if st.button("Generate Introduction"):
         introduction = generate_intro_with_rag(user_input)
         st.markdown("### Generated Introduction")
         st.markdown(introduction)
+
+        # Generate citations for each sentence in the introduction
+        st.markdown("### Citations")
+        sentences = introduction.split(".")
+        for i, sentence in enumerate(sentences):
+            if sentence.strip():
+                citations = get_citations(sentence)
+                st.markdown(f"**Sentence {i+1}:** {sentence.strip()}")
+                st.markdown("Citations:")
+                for citation in citations:
+                    st.markdown(f"- {citation}")
 
 # Export Generated Introduction
 if st.button("Export Introduction"):
