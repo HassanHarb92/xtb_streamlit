@@ -79,6 +79,7 @@ def generate_intro_with_rag(big_picture, paper_summary):
 # Handle Submission
 if st.button("Generate Introduction"):
     if big_picture_input and paper_summary_input:
+        global introduction
         introduction = generate_intro_with_rag(big_picture_input, paper_summary_input)
         st.markdown("### Generated Introduction")
         st.markdown(introduction)
