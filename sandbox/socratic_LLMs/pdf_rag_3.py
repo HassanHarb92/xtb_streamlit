@@ -8,6 +8,8 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 # Streamlit App Title
 st.title("AI-Powered Scientific Paper Introduction Generator")
 
+introduction = "Void"
+st.write ("Issue – Intro cant automatically be saved now..")
 # Sidebar Configuration
 st.sidebar.markdown("### Settings")
 selected_temperature = st.sidebar.slider("Response Creativity (Temperature)", min_value=0.0, max_value=1.0, value=0.7)
@@ -79,7 +81,6 @@ def generate_intro_with_rag(big_picture, paper_summary):
 # Handle Submission
 if st.button("Generate Introduction"):
     if big_picture_input and paper_summary_input:
-        global introduction
         introduction = generate_intro_with_rag(big_picture_input, paper_summary_input)
         st.markdown("### Generated Introduction")
         st.markdown(introduction)
