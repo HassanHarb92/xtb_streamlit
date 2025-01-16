@@ -59,8 +59,15 @@ def visualize_smiles(smiles_list):
     try:
         smiles_list = smiles_list[:10]  # Limit visualization to 10 molecules
         mols = [Chem.MolFromSmiles(s.strip()) for s in smiles_list if Chem.MolFromSmiles(s.strip())]
+        if not mols:
+            return "Error: No valid SMILES could be visualized. Please check the input."
         img = Draw.MolsToGridImage(mols, molsPerRow=5, subImgSize=(200, 200))
-        return img
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        buf.seek(0)
+        return Image.open(buf)
+    except Exception as e:
+        return f"An error occurred while generating the visualization: {e}"
     except Exception as e:
         return f"An error occurred while generating the visualization: {e}"
 
