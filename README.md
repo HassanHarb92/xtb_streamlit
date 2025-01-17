@@ -101,4 +101,5 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 11. Generative AI (check notes from Google Drive)
 
-12. Improve on Socratic LLM agent. Implement the table from the manuscript - monitor improvement in the LLM.
+12. Improve on Socratic LLM agent. Implement the table from the manuscript - monitor improvement in the LLM. Here we have some working examples with different tasks. **To do:** Improve on system prompts, connect agents with each other.
+
