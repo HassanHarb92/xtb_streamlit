@@ -103,3 +103,5 @@ xTB calculator powered by large language model. Current version uses OpenAI API.
 
 12. Improve on Socratic LLM agent. Implement the table from the manuscript - monitor improvement in the LLM. Here we have some working examples with different tasks. **To do:** Improve on system prompts, connect agents with each other.
 
+13. Experimental: Can we link Socratic LLM to xtb calculator? Aim: propose and run the molecules then report back with analysis and propose further prompts.
+
