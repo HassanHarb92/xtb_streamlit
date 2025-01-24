@@ -32,8 +32,7 @@ def generate_lohc_smiles(smiles_list, num_generated):
         The user has provided a set of known LOHC SMILES strings:
         {formatted_smiles}
         
-        Additionally, you have access to the document `{lohc_pdf_path}`, which contains detailed knowledge about LOHC molecular design principles.
-        
+        Additionally, you have access to the document `{lohc_pdf_path}`, which contains detailed knowledge about LOHC molecular design principles. From that document, you need to learn the design rules from them as well.        
         Your task is to generate {num_generated} new LOHC SMILES strings that:
         - Are chemically valid.
         - Maintain key structural features relevant to efficient hydrogen storage and release.
